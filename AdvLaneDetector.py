@@ -79,7 +79,7 @@ class AdvLaneDetector:
 
 	def process_image(self, img):
 		undist = cv2.undistort(img, self.camera.mtx, self.camera.dist, None, self.camera.mtx)
-		
+
 		return undist
 
 img_set = []
@@ -92,8 +92,8 @@ for file_name in os.listdir(path):
 		img = cv2.imread(path + file_name)
 		img_set.append(img)
 
-#ld.calibrate_camera(img_set, nx=9, ny=6)
-#ld.write_camera_params('./camera_params')
-ld.read_camera_params('./camera_params')
+ld.calibrate_camera(img_set, nx=9, ny=6)
+ld.write_camera_params('./camera_params.yml')
+#ld.read_camera_params('./camera_params.yml')
 img = cv2.imread('./camera_cal/calibration20.jpg')
 ld.process_image(img)
