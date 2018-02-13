@@ -3,6 +3,10 @@ import numpy as np
 import cv2
 import os
 import yaml
+from ImagePreprocessor import ImagePreprocessor, perspective_transform
+from SlidingWindowScanner import SlidingWindowScanner
+from moviepy.editor import VideoFileClip
+from IPython.display import HTML
 
 class CameraParams:
 	
@@ -28,6 +32,8 @@ class AdvLaneDetector:
 		self.left_line = Line()
 		self.right_line = Line()
 		self.camera = CameraParams()
+		self.img_preproc = ImagePreprocessor()
+		self.sw_scanner = SlidingWindowScanner()
 
 	def write_camera_params(self, file_name):
 		data = {
@@ -78,22 +84,61 @@ class AdvLaneDetector:
 		self.camera.is_calibrated = True
 
 	def process_image(self, img):
+		if not self.camera.is_calibrated:
+			print('ERROR: camera is not calibrated!')
+			print('Calibrate or load calibration parameters first')
+			return img
+
 		undist = cv2.undistort(img, self.camera.mtx, self.camera.dist, None, self.camera.mtx)
 
-		return undist
+		preproc_img = self.img_preproc.process_image(undist)
 
-img_set = []
+		[windows_layer, lines_layer, points_layer, lane_layer] = self.sw_scanner.process_image(preproc_img)
+
+		lines_layer_transformed = perspective_transform(lines_layer, reverse=True)
+		lane_layer_transformed = perspective_transform(lane_layer, reverse=True)
+		img_bird_view = perspective_transform(img)
+
+		result = cv2.addWeighted(img, 1., lane_layer_transformed, .5, 0.)
+		result = cv2.addWeighted(result, 1., lines_layer_transformed, 1., 0.)
+
+		scanning_window = cv2.addWeighted(img_bird_view, 1., points_layer, .5, 0.)
+		scanning_window = cv2.addWeighted(scanning_window, 1., windows_layer, .1, 0.)
+		scanning_window = cv2.addWeighted(scanning_window, 1., points_layer, 1., 0.)
+		scanning_window = cv2.addWeighted(scanning_window, 1., lines_layer, 1., 0.)
+
+		small_scanning_window = cv2.resize(scanning_window, (0,0), fx=0.4, fy=0.4)
+
+		x_offset = img.shape[1] - small_scanning_window.shape[1]
+		y_offset = 0
+		result[y_offset:y_offset + small_scanning_window.shape[0], 
+			x_offset:x_offset + small_scanning_window.shape[1]] = small_scanning_window
+
+		return result
+
+#img_set = []
 ld = AdvLaneDetector()
 
-path = './camera_cal/'
-for file_name in os.listdir(path):
-	if file_name.endswith('.jpg'):
-		print('Adding image: ' + file_name)
-		img = cv2.imread(path + file_name)
-		img_set.append(img)
+#path = './camera_cal/'
+#for file_name in os.listdir(path):
+#	if file_name.endswith('.jpg'):
+#		print('Adding image: ' + file_name)
+#		img = cv2.imread(path + file_name)
+#		img_set.append(img)
 
-ld.calibrate_camera(img_set, nx=9, ny=6)
-ld.write_camera_params('./camera_params.yml')
-#ld.read_camera_params('./camera_params.yml')
-img = cv2.imread('./camera_cal/calibration20.jpg')
-ld.process_image(img)
+#ld.calibrate_camera(img_set, nx=9, ny=6)
+ld.read_camera_params('./camera_params.yml')
+
+#detector = SimpleLaneDetector()
+
+def process_image(image):
+    res = ld.process_image(image)
+
+    return res
+
+output = './challenge_video_annotated.mp4'
+clip1 = VideoFileClip("./challenge_video.mp4")#.subclip(41.5,43)
+white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
+white_clip.write_videofile(output, audio=False)
+
+
