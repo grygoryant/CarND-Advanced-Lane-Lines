@@ -160,8 +160,8 @@ ld = AdvLaneDetector()
 ld.read_camera_params('./camera_params.yml')
 
 def process_image(image):
-   res = ld.process_image(image)
-    return res
+	res = ld.process_image(image)
+	return res
 
 output = './project_video_annotated1.mp4'
 clip1 = VideoFileClip('./project_video.mp4')#.subclip(5,6)
