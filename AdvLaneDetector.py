@@ -6,6 +6,7 @@ from ImagePreprocessor import ImagePreprocessor, perspective_transform
 from SlidingWindowScanner import SlidingWindowScanner
 from moviepy.editor import VideoFileClip
 from IPython.display import HTML
+import matplotlib.pyplot as plt
 
 class CameraParams:
 	
@@ -86,7 +87,8 @@ class AdvLaneDetector:
 			print('Calibrate or load calibration parameters first')
 			return img
 
-		undist = cv2.undistort(img, self.camera.mtx, self.camera.dist, None, self.camera.mtx)
+		undist = cv2.undistort(img, self.camera.mtx, self.camera.dist, 
+			None, self.camera.mtx)
 
 		preproc_img = self.img_preproc.process_image(undist)
 
@@ -141,9 +143,6 @@ class AdvLaneDetector:
 		cv2.putText(result, 'Right distance: {:.2f} m'.format(right_dist), 
 			(img.shape[1]//10, img.shape[0]//10 + 90), 
 			cv2.FONT_HERSHEY_SIMPLEX, .8, (255, 255, 255), 2)
-		#cv2.putText(result, 'Lane width: {:.2f} m'.format(lane_width), 
-		#	(img.shape[1]//10, img.shape[0]//10 + 90), 
-		#	cv2.FONT_HERSHEY_SIMPLEX, .8, (255, 255, 255), 2)
 
 		return result
 
@@ -160,15 +159,12 @@ ld = AdvLaneDetector()
 #ld.calibrate_camera(img_set, nx=9, ny=6)
 ld.read_camera_params('./camera_params.yml')
 
-#detector = SimpleLaneDetector()
-
 def process_image(image):
-    res = ld.process_image(image)
-
+   res = ld.process_image(image)
     return res
 
 output = './project_video_annotated1.mp4'
-clip1 = VideoFileClip("./project_video.mp4")#.subclip(5,6)
+clip1 = VideoFileClip('./project_video.mp4')#.subclip(5,6)
 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
 white_clip.write_videofile(output, audio=False)
 

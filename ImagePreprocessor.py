@@ -43,12 +43,6 @@ def hls_single_chan_thresh(img, chan='s', thresh=(0,255)):
 	return binary
 
 def perspective_transform(img, reverse=False):
-	#(h, w) = (img.shape[0], img.shape[1])
-	# Define source points
-	#src = np.float32([[w // 2 - 76, h * .625], [w // 2 + 76, h * .625], [-100, h], [w + 100, h]])
-	# Define corresponding destination points
-	#dst = np.float32([[100, 0], [w - 100, 0], [100, h], [w - 100, h]])
-
 	src = np.float32([[558,480],[735,480],[279,669],[1048,669]])
 	dst = np.float32([[305,480/4],[1022,480/4],[279,669],[1048,669]])
 
@@ -64,8 +58,8 @@ def perspective_transform(img, reverse=False):
 
 class ImagePreprocessor:
 
-	def __init__(self, ksize=3, \
-		gradx_thresh=(20, 100), grady_thresh=(80, 200), \
+	def __init__(self, ksize=3,
+		gradx_thresh=(20, 100), grady_thresh=(80, 200),
 		mag_thresh=(80, 200),dir_thresh=(0.7, 1.3)):
 
 		self.ksize = ksize
@@ -93,7 +87,7 @@ class ImagePreprocessor:
 
 		combined_binary = np.zeros_like(combined_grad_thresh)
 		combined_binary[(color_thresh == 1) | 
-						(combined_grad_thresh == 1)] = 1
+						(combined_grad_thresh == 1)] = 1	
 
 		masked_img = combined_binary# * 255
 

@@ -103,9 +103,6 @@ class SlidingWindowScanner:
 		points_layer = np.dstack((img, img, img))*0
 		lane_layer = np.dstack((img, img, img))*0
 
-		#plt.imshow(img)
-		#lt.show()
-
 		if len(lane_peaks) > 1:
 			left_wind_init_idx = lane_peaks[0][0]
 			right_wind_init_idx = lane_peaks[1][0]
