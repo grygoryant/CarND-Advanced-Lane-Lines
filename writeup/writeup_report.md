@@ -1,5 +1,5 @@
 
-**Advanced Lane Finding Project**
+## Advanced Lane Finding Project
 
 The goals / steps of this project are the following:
 
@@ -11,10 +11,6 @@ The goals / steps of this project are the following:
 * Determine the curvature of the lane and vehicle position with respect to center.
 * Warp the detected lane boundaries back onto the original image.
 * Output visual display of the lane boundaries and numerical estimation of lane curvature and vehicle position.
-
-## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
-
-### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
 
 ### Camera Calibration
 
