@@ -95,16 +95,16 @@ class AdvLaneDetector:
 		[windows_layer, lines_layer, 
 			points_layer, lane_layer, 
 			left_rad, right_rad,
-			left_dist, right_dist, lane_width] = self.sw_scanner.process_image(preproc_img)
+			left_dist, right_dist] = self.sw_scanner.process_image(preproc_img)
 
-		data_overlay = img.copy()
-		cv2.rectangle(data_overlay, (0,0), (img.shape[1], img.shape[0]//4), (0,0,0), -1)
+		data_overlay = undist.copy()
+		cv2.rectangle(data_overlay, (0,0), (undist.shape[1], undist.shape[0]//4 + 20), (0,0,0), -1)
 
 		lines_layer_transformed = perspective_transform(lines_layer, reverse=True)
 		lane_layer_transformed = perspective_transform(lane_layer, reverse=True)
-		img_bird_view = perspective_transform(img)
+		img_bird_view = perspective_transform(undist)
 
-		result = cv2.addWeighted(img, 0.6, data_overlay, 0.4, 0.)
+		result = cv2.addWeighted(undist, 0.6, data_overlay, 0.4, 0.)
 		result = cv2.addWeighted(result, 1., lane_layer_transformed, .5, 0.)
 		result = cv2.addWeighted(result, 1., lines_layer_transformed, 1., 0.)
 
@@ -115,33 +115,34 @@ class AdvLaneDetector:
 
 		small_scanning_window = cv2.resize(scanning_window, (0,0), fx=0.25, fy=0.25)
 
-		x_offset = img.shape[1] - small_scanning_window.shape[1]
-		y_offset = 0
+		x_offset = undist.shape[1] - small_scanning_window.shape[1] - 10
+		y_offset = 10
 		result[y_offset:y_offset + small_scanning_window.shape[0], 
 			x_offset:x_offset + small_scanning_window.shape[1]] = small_scanning_window
 
 		cv2.putText(result, 'Radius of curvature: {:.2f} m'.format((left_rad+right_rad)/2), 
-			(img.shape[1]//10, img.shape[0]//10), 
+			(undist.shape[1]//10, undist.shape[0]//10), 
 			cv2.FONT_HERSHEY_SIMPLEX, .8, (255, 255, 255), 2)
 
+		lane_width = left_dist + right_dist
 		lane_center_x = lane_width/2
 		dist_from_center_1 = abs(lane_center_x - left_dist)
 		dist_from_center_2 = abs(lane_center_x - right_dist)
 		avg_dist_from_center = (dist_from_center_1 + dist_from_center_2)/2
 		dist_text = 'Distance from center: {:.2f} m to the '.format(avg_dist_from_center)
-		if left_dist > right_dist:
-			dist_text += 'right'
-		else:
+		if left_dist < lane_center_x:
 			dist_text += 'left'
+		else:
+			dist_text += 'right'
 
 		cv2.putText(result, dist_text, 
-			(img.shape[1]//10, img.shape[0]//10 + 30), 
+			(undist.shape[1]//10, undist.shape[0]//10 + 30), 
 			cv2.FONT_HERSHEY_SIMPLEX, .8, (255, 255, 255), 2)
 		cv2.putText(result, 'Left distance: {:.2f} m'.format(left_dist), 
-			(img.shape[1]//10, img.shape[0]//10 + 60), 
+			(undist.shape[1]//10, undist.shape[0]//10 + 60), 
 			cv2.FONT_HERSHEY_SIMPLEX, .8, (255, 255, 255), 2)
 		cv2.putText(result, 'Right distance: {:.2f} m'.format(right_dist), 
-			(img.shape[1]//10, img.shape[0]//10 + 90), 
+			(undist.shape[1]//10, undist.shape[0]//10 + 90), 
 			cv2.FONT_HERSHEY_SIMPLEX, .8, (255, 255, 255), 2)
 
 		return result
@@ -163,8 +164,8 @@ def process_image(image):
 	res = ld.process_image(image)
 	return res
 
-output = './project_video_annotated1.mp4'
-clip1 = VideoFileClip('./project_video.mp4')#.subclip(5,6)
+output = './project_video_annotated.mp4'
+clip1 = VideoFileClip('./project_video.mp4')#.subclip(45,46)
 white_clip = clip1.fl_image(process_image) #NOTE: this function expects color images!!
 white_clip.write_videofile(output, audio=False)
 

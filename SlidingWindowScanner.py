@@ -8,7 +8,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 m_per_pix_y = 30 / 720
-m_per_pix_x = 3.7 / 700
+m_per_pix_x = 3.7 / 800
 
 def get_n_dist_maxs(array, dist, n):
 	avg_val = sum(array)/len(array)
@@ -42,8 +42,12 @@ def calc_lane_width(fit_left_coords, fit_right_coords, img_width, img_height):
 	return np.absolute((x_right - x_left) * m_per_pix_x)
 
 def calc_dist_to_line(fit_coords, img_width, img_height):
-	x = fit_coords[img_height-1][0]
-	return np.absolute((img_width//2 - x) * m_per_pix_x)
+	x = fit_coords[:,0]
+	y = fit_coords[:,1]
+	#x = np.flip(fit_coords[:,0], axis = 0)
+	#y = np.flip(fit_coords[:,1], axis = 0)
+	distance = np.absolute(((img_width // 2) - x[np.max(y).astype(int)]) * m_per_pix_x)
+	return distance
 
 class SlidingWindowScanner:
 
@@ -104,8 +108,8 @@ class SlidingWindowScanner:
 		lane_layer = np.dstack((img, img, img))*0
 
 		if len(lane_peaks) > 1:
-			left_wind_init_idx = lane_peaks[0][0]
-			right_wind_init_idx = lane_peaks[1][0]
+			left_wind_init_idx = lane_peaks[1][0]
+			right_wind_init_idx = lane_peaks[0][0]
 
 			nonzero = img.nonzero()
 			nonzeroy = np.array(nonzero[0])
@@ -154,11 +158,11 @@ class SlidingWindowScanner:
 
 			left_curv_rad = calc_curv_rad(left_fit_coords, img.shape[0]-1)
 			right_curv_rad = calc_curv_rad(right_fit_coords, img.shape[0]-1)
+
 			left_dist = calc_dist_to_line(left_fit_coords, img.shape[1], img.shape[0])
 			right_dist = calc_dist_to_line(right_fit_coords, img.shape[1], img.shape[0])
-			lane_width = calc_lane_width(left_fit_coords, right_fit_coords, img.shape[1], img.shape[0])
 
-			points_layer[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+			points_layer[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 255, 0]
 			points_layer[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
 
 			self.draw_curve(lines_layer, left_fit_coords)
@@ -171,7 +175,7 @@ class SlidingWindowScanner:
 		return [windows_layer, lines_layer, 
 			points_layer, lane_layer, 
 			left_curv_rad, right_curv_rad,
-			left_dist, right_dist, lane_width]
+			left_dist, right_dist]
 
 	def adjust_lanes(self, img):
 		nonzero = img.nonzero()
@@ -212,9 +216,9 @@ class SlidingWindowScanner:
 
 		left_curv_rad = calc_curv_rad(left_fit_coords, img.shape[0]-1)
 		right_curv_rad = calc_curv_rad(right_fit_coords, img.shape[0]-1)
+
 		left_dist = calc_dist_to_line(left_fit_coords, img.shape[1], img.shape[0])
 		right_dist = calc_dist_to_line(right_fit_coords, img.shape[1], img.shape[0])
-		lane_width = calc_lane_width(left_fit_coords, right_fit_coords, img.shape[1], img.shape[0])
 
 		self.draw_line_area(windows_layer, left_fit_coords)
 		self.draw_line_area(windows_layer, right_fit_coords)
@@ -230,7 +234,7 @@ class SlidingWindowScanner:
 		return [windows_layer, lines_layer, 
 			points_layer, lane_layer, 
 			left_curv_rad, right_curv_rad,
-			left_dist, right_dist, lane_width]
+			left_dist, right_dist]
 
 	def process_image(self, img):
 		if not self.windows_initialized:
